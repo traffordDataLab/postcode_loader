@@ -12,6 +12,7 @@ The postcode centroids are available under the <a href="https://www.nationalarch
 <br />
 The app can be viewed at <a href="https://trafforddatalab.shinyapps.io/postcode_loader/" target="_blank">https://trafforddatalab.shinyapps.io/postcode_loader/</a>
 
+<br />
 To run the app locally execute the following code:
 
 ``` r

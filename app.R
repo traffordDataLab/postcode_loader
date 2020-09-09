@@ -70,17 +70,30 @@ server <- function(input, output) {
   
   postcodes <- reactive({
     req(ward_code())
-    fromJSON(paste0("https://ons-inspire.esriuk.com/arcgis/rest/services/Postcodes/ONS_Postcode_Directory_Latest_Centroids/MapServer/0/query?where=",
+    
+    resultOffset<-0
+    df_total = data.frame()
+    repeat{
+      response<-fromJSON(paste0("https://ons-inspire.esriuk.com/arcgis/rest/services/Postcodes/ONS_Postcode_Directory_Latest_Centroids/MapServer/0/query?where=",
                                URLencode(paste0("osward = '", ward_code(), "'")),
-                               "&outFields=pcds,osward,oslaua,lat,long&outSR=4326&f=json"), flatten = T) %>%
-      pluck("features") %>%
-      select(postcode = attributes.pcds,
-             ward_code = attributes.osward,
-             lad_code = attributes.oslaua,
-             lon = attributes.long,
-             lat = attributes.lat) %>%
-      left_join(select(lookup, ward_code, ward_name), by = "ward_code") %>%
-      select(postcode, ward_code, ward_name, lon, lat)
+                               "&outFields=pcds,osward,oslaua,lat,long&outSR=4326&resultOffset=",resultOffset,"&f=json"), flatten = T) 
+      df<-response %>%
+        pluck("features") %>%
+        select(postcode = attributes.pcds,
+               ward_code = attributes.osward,
+               lad_code = attributes.oslaua,
+               lon = attributes.long,
+               lat = attributes.lat) %>%
+        left_join(select(lookup, ward_code, ward_name), by = "ward_code") %>%
+        select(postcode, ward_code, ward_name, lon, lat)
+      
+      df_total <- rbind(df_total,df)
+      
+      if (exists('exceededTransferLimit', where=response)){
+        resultOffset<-resultOffset+1000
+      } else break
+    }
+    df_total
   })
   
   output$map = renderPlot({
@@ -89,7 +102,7 @@ server <- function(input, output) {
     plot(st_geometry(ward_layer()), add = T, col = "#fc6721", border = "#212121")
 })
   
-  output$table <- DT::renderDataTable({
+  output$table <- DT::renderDataTable(server=FALSE,{
     postcodes()
     }, 
     extensions= c('Buttons', "Scroller"), 

@@ -4,7 +4,7 @@
 # Publisher URL: http://geoportal.statistics.gov.uk/datasets/ons-postcode-directory-latest-centroids
 # Licence: Open Government Licence 3.0
 
-library(shiny) ; library(tidyverse); library(sf) ; library(jsonlite) ; library(DT)
+library(shiny) ; library(tidyverse); library(sf) ; library(jsonlite) ; library(DT) ; library(shinycssloaders)
 
 gm <- URLencode("cty18nm = 'Greater Manchester'", reserved = TRUE)
 
@@ -40,7 +40,7 @@ ui <- fluidPage(title = "Postcode loader",
         ),
         tags$main(
           mainPanel(uiOutput("text"),
-                  plotOutput("map"),
+                  withSpinner(plotOutput("map"), type = 4, color = "#046dc3"),
                   DT::dataTableOutput("table"),
                   br(),
                   textOutput("attribution"),

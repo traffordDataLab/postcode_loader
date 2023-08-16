@@ -1,18 +1,19 @@
 ## Postcode loader ##
 
 # Source: ONS Open Geography Portal
-# Publisher URL: http://geoportal.statistics.gov.uk/datasets/ons-postcode-directory-latest-centroids
+# Publisher URL: https://geoportal.statistics.gov.uk/datasets/ons::onspd-online-latest-centroids/about
 # Licence: Open Government Licence 3.0
 
 library(shiny) ; library(tidyverse); library(sf) ; library(jsonlite) ; library(DT) ; library(shinycssloaders)
 
-gm <- URLencode("cty18nm = 'Greater Manchester'", reserved = TRUE)
 
-lookup <- fromJSON(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/WD18_LAD18_CTY18_OTH_UK_LU/FeatureServer/0/query?where=", gm, "&outFields=WD18CD,WD18NM,LAD18CD,LAD18NM,CTY18CD,CTY18NM&outSR=4326&f=json"), flatten = T) %>% 
-  pluck("features") %>% 
-  as_tibble() %>% 
-  select(lad_code = attributes.LAD18CD, lad_name = attributes.LAD18NM,
-         ward_code = attributes.WD18CD, ward_name = attributes.WD18NM)
+# Create a lookup for wards to Local Authorities within Greater Manchester
+gm <- URLencode("LAD23CD = 'E08000001' OR LAD23CD = 'E08000002' OR LAD23CD = 'E08000003' OR LAD23CD = 'E08000004' OR LAD23CD = 'E08000005' OR LAD23CD = 'E08000006' OR LAD23CD = 'E08000007' OR LAD23CD = 'E08000008' OR LAD23CD = 'E08000009' OR LAD23CD = 'E08000010'", reserved = TRUE)
+
+lookup <- st_read(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/WD23_LAD23_UK_LU/FeatureServer/0/query?outFields=*&where=", gm, "&f=geojson")) %>% 
+  st_drop_geometry() %>%
+  select(lad_code = LAD23CD, lad_name = LAD23NM,
+         ward_code = WD23CD, ward_name = WD23NM)
 
 ui <- fluidPage(title = "Postcode loader",
    # Set the language of the page - important for accessibility
@@ -25,7 +26,7 @@ ui <- fluidPage(title = "Postcode loader",
             tags$a(tags$img(src = "trafforddatalab_logo.png", width = "25%", alt = "Trafford Data Lab"), href = "https://www.trafforddatalab.io/", target="_blank"),
             tags$h1("Postcode loader"),
             tags$p("This application allows you to download the ",
-                    tags$a("latest postcode centroids", href = "https://geoportal.statistics.gov.uk/datasets/ons-postcode-directory-latest-centroids", target="_blank"),
+                    tags$a("latest postcode centroids", href = "https://geoportal.statistics.gov.uk/datasets/ons::onspd-online-latest-centroids/about", target="_blank"),
                     "from the ", tags$a("ONS", href = "https://www.ons.gov.uk/", target="_blank"), "' ", 
                     tags$a("Open Geography Portal", href = "https://geoportal.statistics.gov.uk/", target="_blank"), 
                     " for your chosen ward in Greater Manchester."),
@@ -127,16 +128,16 @@ server <- function(input, output, session) {
   ward_code <- reactive({pull(select(filter(filtered_data(), ward_name %in% input$filter_ward), ward_code))})
 
   lad_layer <- reactive({
-    st_read(paste0("https://ons-inspire.esriuk.com/arcgis/rest/services/Administrative_Boundaries/Local_Authority_Districts_December_2018_Boundaries_UK_BGC/MapServer/0/query?where=", 
-                   URLencode(paste0("lad18nm = '", input$filter_lad, "'"), reserved = TRUE), 
-                   "&outFields=lad18cd,lad18nm,long,lat&outSR=4326&f=geojson"))
+    st_read(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Local_Authority_Districts_May_2023_UK_BGC_V2/FeatureServer/0/query?where=", 
+                   URLencode(paste0("lad23nm = '", input$filter_lad, "'"), reserved = TRUE), 
+                   "&outFields=lad23cd,lad23nm,long,lat&outSR=4326&f=geojson"))
   })
   
   ward_layer <- reactive({
     req(ward_code())
-    st_read(paste0("https://ons-inspire.esriuk.com/arcgis/rest/services/Administrative_Boundaries/Wards_December_2018_Boundaries_V3/MapServer/2/query?where=", 
-                   URLencode(paste0("wd18cd = '", ward_code(), "'"), reserved = TRUE), 
-                   "&outFields=wd18cd,wd18nm,long,lat&outSR=4326&f=geojson"))
+    st_read(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/WD_MAY_2023_UK_BGC/FeatureServer/0/query?where=", 
+                   URLencode(paste0("wd23cd = '", ward_code(), "'"), reserved = TRUE), 
+                   "&outFields=wd23cd,wd23nm,long,lat&outSR=4326&f=geojson"))
   })
   
   postcodes <- reactive({
@@ -145,16 +146,16 @@ server <- function(input, output, session) {
     resultOffset<-0
     df_total = data.frame()
     repeat{
-      response<-fromJSON(paste0("https://ons-inspire.esriuk.com/arcgis/rest/services/Postcodes/ONS_Postcode_Directory_Latest_Centroids/MapServer/0/query?where=",
+      response<-fromJSON(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ONSPD_Online_Latest_Centroids/FeatureServer/0/query?where=",
                                URLencode(paste0("osward = '", ward_code(), "'")),
                                "&outFields=pcds,osward,oslaua,lat,long&outSR=4326&resultOffset=",resultOffset,"&f=json"), flatten = T) 
       df<-response %>%
         pluck("features") %>%
-        select(postcode = attributes.pcds,
-               ward_code = attributes.osward,
-               lad_code = attributes.oslaua,
-               lon = attributes.long,
-               lat = attributes.lat) %>%
+        select(postcode = attributes.PCDS,
+               ward_code = attributes.OSWARD,
+               lad_code = attributes.OSLAUA,
+               lon = attributes.LONG,
+               lat = attributes.LAT) %>%
         left_join(select(lookup, ward_code, ward_name), by = "ward_code") %>%
         select(postcode, ward_code, ward_name, lon, lat)
       
@@ -202,7 +203,7 @@ server <- function(input, output, session) {
   
   output$attribution <- renderText({
     req(ward_code())
-    "Contains National Statistics and OS data © Crown copyright and database right 2019"
+    "Contains National Statistics and OS data © Crown copyright and database right 2023"
   })
   
   output$code <- renderUI({

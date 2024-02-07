@@ -126,9 +126,8 @@ server <- function(input, output, session) {
   })
   
   ward_code <- reactive({pull(select(filter(filtered_data(), ward_name %in% input$filter_ward), ward_code))})
-
   lad_layer <- reactive({
-    st_read(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Local_Authority_Districts_May_2023_UK_BGC_V2/FeatureServer/0/query?where=", 
+    st_read(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Local_Authority_Districts_December_2023_Boundaries_UK_BGC/FeatureServer/0/query?where=", 
                    URLencode(paste0("lad23nm = '", input$filter_lad, "'"), reserved = TRUE), 
                    "&outFields=lad23cd,lad23nm,long,lat&outSR=4326&f=geojson"))
   })
@@ -136,8 +135,8 @@ server <- function(input, output, session) {
   ward_layer <- reactive({
     req(ward_code())
     st_read(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/WD_MAY_2023_UK_BGC/FeatureServer/0/query?where=", 
-                   URLencode(paste0("wd23cd = '", ward_code(), "'"), reserved = TRUE), 
-                   "&outFields=wd23cd,wd23nm,long,lat&outSR=4326&f=geojson"))
+                  URLencode(paste0("wd23cd = '", ward_code(), "'"), reserved = TRUE), 
+                  "&outFields=wd23cd,wd23nm,long,lat&outSR=4326&f=geojson"))
   })
   
   postcodes <- reactive({

@@ -26,7 +26,7 @@ ui <- fluidPage(title = "Postcode loader",
             tags$a(tags$img(src = "trafforddatalab_logo.png", width = "25%", alt = "Trafford Data Lab"), href = "https://www.trafforddatalab.io/", target="_blank"),
             tags$h1("Postcode loader"),
             tags$p("This application allows you to download the ",
-                    tags$a("latest postcode centroids", href = "https://geoportal.statistics.gov.uk/datasets/ons::onspd-online-latest-centroids/about", target="_blank"),
+                    tags$a("latest postcode centroids", href = "https://geoportal.statistics.gov.uk/datasets/ons::onspd-online-latest-centroids-1/about", target="_blank"),
                     "from the ", tags$a("ONS", href = "https://www.ons.gov.uk/", target="_blank"), "' ", 
                     tags$a("Open Geography Portal", href = "https://geoportal.statistics.gov.uk/", target="_blank"), 
                     " for your chosen ward in Greater Manchester."),
@@ -145,7 +145,7 @@ server <- function(input, output, session) {
     resultOffset<-0
     df_total = data.frame()
     repeat{
-      response<-fromJSON(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ONSPD_Online_Latest_Centroids/FeatureServer/0/query?where=",
+      response<-fromJSON(paste0("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ONSPD_Online_Latest_Centroids/FeatureServer/1/query?where=",
                                URLencode(paste0("osward = '", ward_code(), "'")),
                                "&outFields=pcds,osward,oslaua,lat,long&outSR=4326&resultOffset=",resultOffset,"&f=json"), flatten = T) 
       df<-response %>%
@@ -202,7 +202,7 @@ server <- function(input, output, session) {
   
   output$attribution <- renderText({
     req(ward_code())
-    "Contains National Statistics and OS data © Crown copyright and database right 2023"
+    paste0("Contains National Statistics and OS data © Crown copyright and database right ", format(Sys.Date(), "%Y"))
   })
   
   output$code <- renderUI({
